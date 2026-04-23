@@ -1,1 +1,2 @@
-# finio-insights
+# Finio Insights
+Module responsible for Insights
