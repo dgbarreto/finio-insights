@@ -6,21 +6,21 @@ import kotlinx.serialization.Serializable
 data class SpendingByCategoryDto(
     val category: String,
     val total: Double,
-    val percentage: Int
+    val percentage: Double
 )
 
 @Serializable
 data class MonthlyEvolutionDto(
     val year: Int,
     val month: Int,
-    val income: Double,
+    val incomes: Double,
     val expenses: Double,
     val balance: Double
 )
 
 @Serializable
 data class InsightsSummaryDto(
-    val totalIncome: Double,
+    val totalIncomes: Double,
     val totalExpenses: Double,
     val balance: Double,
     val topCategory: String? = null

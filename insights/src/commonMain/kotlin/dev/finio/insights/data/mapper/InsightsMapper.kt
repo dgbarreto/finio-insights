@@ -6,24 +6,25 @@ import dev.finio.insights.data.dto.SpendingByCategoryDto
 import dev.finio.insights.domain.model.InsightsSummary
 import dev.finio.insights.domain.model.MonthlyEvolution
 import dev.finio.insights.domain.model.SpendingByCategory
+import kotlin.math.round
 
 
 fun SpendingByCategoryDto.toDomain() = SpendingByCategory(
     category = category,
     total = total,
-    percentage = percentage
+    percentage = round(percentage).toInt()
 )
 
 fun MonthlyEvolutionDto.toDomain() = MonthlyEvolution(
     year = year,
     month = month,
-    income = income,
+    income = incomes,
     expenses = expenses,
     balance = balance
 )
 
 fun InsightsSummaryDto.toDomain() = InsightsSummary(
-    totalIncome = totalIncome,
+    totalIncome = totalIncomes,
     totalExpenses = totalExpenses,
     balance = balance,
     topCategory = topCategory

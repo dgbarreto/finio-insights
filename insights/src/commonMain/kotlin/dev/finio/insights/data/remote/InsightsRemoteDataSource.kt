@@ -33,7 +33,7 @@ class InsightsRemoteDataSource(
         token: String,
         months: Int = 6
     ): List<MonthlyEvolutionDto> =
-        client.get("$baseUrl/monthly-evolution?months=$months"){
+        client.get("$baseUrl/insights/monthly-evolution?months=$months"){
             header(HttpHeaders.Authorization, "Bearer $token")
         }.body()
 
