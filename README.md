@@ -1,16 +1,17 @@
-# finio-insights
+O README atual está bem estruturado. Precisa atualizar o Koin setup, os domain models completos e o loadAll correto. Aqui está o README atualizado:
+markdown# finio-insights
 
-KMP insights module for the Finio platform. Encapsulates all financial analysis logic — spending by category, monthly evolution, and period summary — published to Maven for consumption by `finio-app`.
+Kotlin Multiplatform insights module for the Finio platform. Encapsulates all financial analytics logic — spending by category, monthly evolution, and period summary — published to GitHub Packages (Maven) for consumption by `finio-app`.
 
 ## Stack
 
 - **Language**: Kotlin Multiplatform
-- **HTTP**: Ktor Client 3.1.3
-- **Serialization**: kotlinx.serialization 1.8.1
-- **Coroutines**: kotlinx.coroutines 1.10.2
-- **DI**: Koin 4.0.0
-- **Publication**: GitHub Packages (Maven)
+- **HTTP**: Ktor Client
+- **Serialization**: kotlinx.serialization
+- **Coroutines**: kotlinx.coroutines
+- **DI**: Koin
 - **CI/CD**: Bitrise
+- **Publication**: GitHub Packages (Maven)
 
 ## Targets
 
@@ -21,48 +22,52 @@ KMP insights module for the Finio platform. Encapsulates all financial analysis 
 | iOS Simulator Arm64 | ✅ |
 
 ## Module structure
-
-```
 insights/src/
-  commonMain/
-    kotlin/dev/finio/insights/
-      data/
-        dto/
-          InsightsDtos.kt                  ← API request and response DTOs
-        mapper/
-          InsightsMapper.kt                ← DTO → domain model mappers
-        remote/
-          InsightsRemoteDataSource.kt      ← Ktor API calls
-        repository/
-          InsightsRepositoryImpl.kt        ← Repository implementation
-      di/
-        InsightsModule.kt                  ← Koin module definition
-      domain/
-        model/
-          SpendingByCategory.kt            ← category, total, percentage
-          MonthlyEvolution.kt              ← year, month, income, expenses, balance
-          InsightsSummary.kt               ← totalIncome, totalExpenses, balance, topCategory
-        repository/
-          InsightsRepository.kt            ← Repository interface
-      presentation/
-        InsightsViewModel.kt               ← ViewModel with InsightsUiState
-```
+commonMain/kotlin/dev/finio/insights/
+data/
+dto/                              ← API request/response DTOs
+mapper/                           ← DTO → domain model mappers
+remote/
+InsightsRemoteDataSource.kt     ← Ktor API calls
+repository/
+InsightsRepositoryImpl.kt       ← repository implementation
+di/
+InsightsModule.kt                 ← Koin module (insightsModule(baseUrl))
+domain/
+model/
+SpendingByCategory.kt           ← category, total, percentage
+MonthlyEvolution.kt             ← year, month, income, expenses, balance
+InsightsSummary.kt              ← totalIncome, totalExpenses, balance, topCategory
+repository/
+InsightsRepository.kt           ← interface
+presentation/
+InsightsViewModel.kt              ← StateFlow<InsightsUiState>
+InsightsUiState.kt
 
-## API endpoints
-
-All endpoints are served by `finio-api` deployed on Railway.
-
-| Method | Route | Description | Auth |
-|--------|-------|-------------|------|
-| POST | `/insights/spending-by-category` | Spending by category in period | ✓ |
-| GET | `/insights/monthly-evolution` | Monthly evolution (query param: `months`) | ✓ |
-| POST | `/insights/summary` | Financial summary for period | ✓ |
-
-> POST is used for endpoints that require `startDate`/`endDate` in the request body.
-
-## ViewModel state
+## Domain models
 
 ```kotlin
+data class SpendingByCategory(
+    val category: String,
+    val total: Double,
+    val percentage: Int
+)
+
+data class MonthlyEvolution(
+    val year: Int,
+    val month: Int,
+    val income: Double,
+    val expenses: Double,
+    val balance: Double
+)
+
+data class InsightsSummary(
+    val totalIncome: Double,
+    val totalExpenses: Double,
+    val balance: Double,
+    val topCategory: String?
+)
+
 data class InsightsUiState(
     val spendingByCategory: List<SpendingByCategory> = emptyList(),
     val monthlyEvolution: List<MonthlyEvolution> = emptyList(),
@@ -72,69 +77,71 @@ data class InsightsUiState(
 )
 ```
 
-## DI usage
+## API endpoints
 
-Initialize from your app shell (not from this module):
+All endpoints served by `finio-api` deployed on Railway.
+
+| Method | Route | Description | Auth |
+|--------|-------|-------------|------|
+| POST | `/insights/spending-by-category` | Spending by category in period | ✓ |
+| GET | `/insights/monthly-evolution` | Monthly evolution (`months` query param) | ✓ |
+| POST | `/insights/summary` | Financial summary for period | ✓ |
+
+> `POST` is used for endpoints that require `startDate`/`endDate` in the request body.
+
+## ViewModel
 
 ```kotlin
-// Android — inside Application.onCreate()
-initKoin {
-    modules(insightsModule(
-        baseUrl = "https://your-api.railway.app",
-        tokenProvider = { tokenStorage.getToken() }
-    ))
+class InsightsViewModel(repository: InsightsRepository) {
+    val state: StateFlow<InsightsUiState>
+
+    fun loadAll(startDate: String, endDate: String, months: Int = 6)
+    // Fetches spendingByCategory, monthlyEvolution and summary in parallel
+    // startDate/endDate format: ISO-8601 UTC (e.g. "2026-07-01T00:00:00.000Z")
 }
 ```
 
-Then resolve the ViewModel via Koin:
+## Koin setup
+
+```kotlin
+startKoin {
+    modules(
+        insightsModule(baseUrl = "https://finio-api-production.up.railway.app")
+    )
+}
+```
+
+Resolve and use:
 
 ```kotlin
 val viewModel: InsightsViewModel = get()
 viewModel.loadAll(
-    startDate = "2024-06-01T00:00:00Z",
-    endDate = "2024-06-30T23:59:59Z",
+    startDate = "2026-07-01T00:00:00.000Z",
+    endDate = "2026-07-31T00:00:00.000Z",
     months = 6
 )
 ```
 
-## Maven artifacts
-
-Published to GitHub Packages under `dev.finio` group:
+## Published artifacts
 
 | Artifact | Description |
 |----------|-------------|
-| `insights-android` | Android AAR |
-| `insights-iosarm64` | iOS Arm64 klib |
-| `insights-iossimulatorarm64` | iOS Simulator Arm64 klib |
-| `insights-kmp` | KMP metadata |
+| `dev.finio:insights-android` | Android AAR |
+| `dev.finio:insights-iosarm64` | iOS Arm64 framework |
+| `dev.finio:insights-iossimulatorarm64` | iOS Simulator framework |
+| `dev.finio:insights-kmp` | KMP metadata |
 
-## CI/CD
-
-| Trigger | Workflow | Action |
-|---------|----------|--------|
-| Push to `main` | `ci` | Compiles Android AAR + iOS Arm64 |
-| Any tag (e.g. `0.1.0`) | `release` | Publishes all artifacts to GitHub Packages |
-
-## Build
+## Publishing
 
 ```bash
-# Compile all targets
-./gradlew :insights:assemble
-
-# Publish to local Maven (~/.m2)
-./gradlew :insights:publishToMavenLocal
-
-# Publish to GitHub Packages (requires GITHUB_ACTOR and GITHUB_TOKEN)
-./gradlew :insights:publish
+git tag 1.0.0
+git push origin 1.0.0
 ```
 
-## Key versions
-
-```toml
-kotlin = "2.3.21"
-agp = "9.0.1"
-ktor = "3.1.3"
-koin = "4.0.0"
-kotlinx-coroutines = "1.10.2"
-kotlinx-serialization = "1.8.1"
+Local publish:
+```properties
+# local.properties
+version=1.0.0
+github.actor=your_username
+github.token=your_token
 ```
